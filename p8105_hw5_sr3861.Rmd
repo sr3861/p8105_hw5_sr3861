@@ -130,7 +130,23 @@ balt_prop_test %>%
 
 #create a function to perform prop.test()
 
-fxn_prop_test = function(city_data)
+fxn_prop_test = function(city){
+
+city_summary = 
+  homicides %>%
+    filter(city_state == city) %>%
+  mutate(solved = case_when(
+           disposition == "Closed without arrest" ~ "no",
+           disposition == "Open/No arrest" ~ "no",
+           disposition == "Closed by arrest" ~ "yes")) %>%
+  summarize(
+    unsolved = sum(solved == "no"),
+    total = n()) 
+    
+prop_test = prop.test(city_summary$unsolved, city_summary$total)  
+
+return(prop_test)
+}
 ```
 
 ### Problem 3: Power in a 1-sample t-test
