@@ -146,11 +146,30 @@ t_test_stats %>%
 
 *Plot the average estimate of μ^ on the y axis and the true value of μ on the x axis. Make a second plot (or overlay on the first) the average estimate of μ^ only in samples for which the null was rejected on the y axis and the true value of μ on the x axis.*
 ```{r plot mu hat}
-t_test_stats %>%
+plot_mu_hat = 
+  t_test_stats %>%
   group_by(mu) %>%
   summarize(avg_mu_hat = mean(mu_hat))%>%
   ggplot(aes(x = mu, y = avg_mu_hat)) + geom_line() +
   xlab("True Mean")+
   ylab("Average Estimate of Mu Hat")
+
+plot_rejected = 
+  t_test_stats %>%
+  mutate(
+  reject = (p.value < 0.05)) %>%
+  group_by(mu) %>%
+  filter(reject == TRUE)%>%
+  summarize(
+    avg_reject = mean(mu_hat))%>%
+  ggplot(aes(x = mu, y = avg_reject)) + geom_line() +
+  xlab("True Mean")+
+  ylab("Average Estimate of Mu Hat Where Null is Rejected")
+
+plot_mu_hat + plot_rejected
+  
 ```
 
+*Is the sample average of μ hat across tests for which the null is rejected approximately equal to the true value of μ? Why or why not?*
+
+ANSWER: Yes, the sample avergae is approximately equal to the true mean even when the null is rejected. This is because all the data was ultimately created from the same distribution with the same mean. The range of values of the estimate of mu hat is much larger when the null is rejected, but the mean value will still be the same. 
