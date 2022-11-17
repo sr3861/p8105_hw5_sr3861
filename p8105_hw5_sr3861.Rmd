@@ -33,7 +33,48 @@ scale_colour_discrete = scale_colour_viridis_d
 scale_fill_discrete = scale_fill_viridis_d
 ```
 
- 
+### Problem 1
+
+The code chunk below imports the data in individual spreadsheets contained in `./data/zip_data/`. To do this, I create a dataframe that includes the list of all files in that directory and the complete path to each file. As a next step, I `map` over paths and import data using the `read_csv` function. Finally, I `unnest` the result of `map`.
+
+```{r}
+full_df = 
+  tibble(
+    files = list.files("Data/zip_data/"),
+    path = str_c("Data/zip_data/", files)
+  ) %>% 
+  mutate(data = map(path, read_csv)) %>% 
+  unnest()
+```
+
+The result of the previous code chunk isn't tidy -- data are wide rather than long, and some important variables are included as parts of others. The code chunk below tides the data using string manipulations on the file, converting from wide to long, and selecting relevant variables. 
+
+```{r}
+tidy_df = 
+  full_df %>% 
+  mutate(
+    files = str_replace(files, ".csv", ""),
+    group = str_sub(files, 1, 3)) %>% 
+  pivot_longer(
+    week_1:week_8,
+    names_to = "week",
+    values_to = "outcome",
+    names_prefix = "week_") %>% 
+  mutate(week = as.numeric(week)) %>% 
+  select(group, subj = files, week, outcome)
+```
+
+Finally, the code chunk below creates a plot showing individual data, faceted by group. 
+
+```{r}
+tidy_df %>% 
+  ggplot(aes(x = week, y = outcome, group = subj, color = group)) + 
+  geom_point() + 
+  geom_path() + 
+  facet_grid(~group)
+```
+
+This plot suggests high within-subject correlation -- subjects who start above average end up above average, and those that start below average end up below average. Subjects in the control group generally don't change over time, but those in the experiment group increase their outcome in a roughly linear way.  
 
 ### Problem 2: Washington Post Homicides Data
 
@@ -58,8 +99,39 @@ homicides %>%
 ```
 
 **Baltimore, MD Proportions**
+Use the prop.test function to estimate the proportion of homicides that are unsolved; save the output of prop.test as an R object, apply the broom::tidy to this object and pull the estimated proportion and confidence intervals from the resulting tidy dataframe
 
+```{r baltimore}
+baltimore =
+  homicides %>%
+  filter(city_state == "Baltimore, MD") %>%
+  mutate(solved = case_when(
+           disposition == "Closed without arrest" ~ "no",
+           disposition == "Open/No arrest" ~ "no",
+           disposition == "Closed by arrest" ~ "yes")) %>%
+  summarize(
+    unsolved = sum(solved == "no"),
+    total_balt = n()) 
 
+#perform test & save in dataframe
+balt_prop_test = prop.test(baltimore$unsolved, baltimore$total_balt) 
+
+# pull estimated proportion & confidence interval
+balt_prop_test %>%
+  broom::tidy()%>%
+  select(estimate, conf.low, conf.high)
+
+#pull() only works for 1 variable at a time 
+```
+
+**prop.test for all cities**
+
+```{r prop test function}
+
+#create a function to perform prop.test()
+
+fxn_prop_test = function(city_data)
+```
 
 ### Problem 3: Power in a 1-sample t-test
 
