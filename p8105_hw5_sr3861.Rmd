@@ -33,53 +33,11 @@ scale_colour_discrete = scale_colour_viridis_d
 scale_fill_discrete = scale_fill_viridis_d
 ```
 
-### Problem 1
-
-Tidy longitudinal data
-
-The code chunk below imports the data in individual spreadsheets contained in `./data/zip_data/`. To do this, I create a dataframe that includes the list of all files in that directory and the complete path to each file. As a next step, I `map` over paths and import data using the `read_csv` function. Finally, I `unnest` the result of `map`.
-
-```{r}
-full_df = 
-  tibble(
-    files = list.files("Data/zip_data.zip/"),
-    path = str_c("Data/zip_data.zip/", files)
-  ) %>% 
-  mutate(data = map(path, read_csv)) %>% 
-  unnest()
-```
-
-The result of the previous code chunk isn't tidy -- data are wide rather than long, and some important variables are included as parts of others. The code chunk below tides the data using string manipulations on the file, converting from wide to long, and selecting relevant variables. 
-
-```{r}
-tidy_df = 
-  full_df %>% 
-  mutate(
-    files = str_replace(files, ".csv", ""),
-    group = str_sub(files, 1, 3)) %>% 
-  pivot_longer(
-    week_1:week_8,
-    names_to = "week",
-    values_to = "outcome",
-    names_prefix = "week_") %>% 
-  mutate(week = as.numeric(week)) %>% 
-  select(group, subj = files, week, outcome)
-```
-
-Finally, the code chunk below creates a plot showing individual data, faceted by group. 
-
-```{r}
-tidy_df %>% 
-  ggplot(aes(x = week, y = outcome, group = subj, color = group)) + 
-  geom_point() + 
-  geom_path() + 
-  facet_grid(~group)
-```
-
-This plot suggests high within-subject correlation -- subjects who start above average end up above average, and those that start below average end up below average. Subjects in the control group generally don't change over time, but those in the experiment group increase their outcome in a roughly linear way. 
+ 
 
 ### Problem 2: Washington Post Homicides Data
 
+**Read in & tidy the data:**
 ```{r read and tidy data}
 #Read in data from github
 homicides = read.csv('https://raw.githubusercontent.com/washingtonpost/data-homicides/master/homicide-data.csv') %>%
@@ -88,6 +46,18 @@ homicides = read.csv('https://raw.githubusercontent.com/washingtonpost/data-homi
     city_state = str_c(city, ", ", state)
   )
 ```
+The raw data set has *`r nrow(homicides)`* observations of *`r ncol(homicides)`* variables. It contains data on homicides, with variables such as  reported date,  victim's name,  race/age/sex,  disposition, city and state.
+
+**Summary of Unsolved Homicides:**
+```{r city summary}
+homicides %>%
+  filter(disposition == "Closed without arrest" | disposition == "Open/No arrest")%>%
+  group_by(city_state, disposition)%>%
+  count() %>%
+  knitr::kable()
+```
+
+**Baltimore, MD Proportions**
 
 
 
@@ -97,7 +67,7 @@ n = 30
 sigma = 5
 mu = 0
 
-Generate 5000 datasets from the model: x ~ Normal[mu, sigma]:
+**Generate 5000 datasets from the model: x ~ Normal[mu, sigma]:**
 ```{r sim mean sd}
 
 #create function
@@ -126,7 +96,7 @@ sim_results = bind_rows(output)
   
 ```
 
-Repeat the above for mu = 1, 2, 3, 4, 5, 6 
+**Repeat the above for mu = 1, 2, 3, 4, 5, 6**
 ```{r varying mu}
 
 #create a dataframe with all the outputs
@@ -142,7 +112,7 @@ unnest(stats)
 
 ```
 
-*Plot proportion of times null was rejected vs. mu*
+**Plot proportion of times null was rejected vs. mu**
 ```{r plot power}
 t_test_stats %>%
   mutate(
@@ -155,7 +125,7 @@ t_test_stats %>%
   ylab("Test Power")
 ```
 
-*Plot the average estimate of μ^ on the y axis and the true value of μ on the x axis. Make a second plot (or overlay on the first) the average estimate of μ^ only in samples for which the null was rejected on the y axis and the true value of μ on the x axis.*
+**Plot the average estimate of μ-hat vs. the true value of μ. Make a second plot of the average estimate of μ-hat only in samples for which the null was rejected vs. the true value of μ.**
 ```{r plot mu hat}
 plot_mu_hat = 
   t_test_stats %>%
@@ -181,6 +151,6 @@ plot_mu_hat + plot_rejected
   
 ```
 
-*Is the sample average of μ hat across tests for which the null is rejected approximately equal to the true value of μ? Why or why not?*
+**Is the sample average of μ hat across tests for which the null is rejected approximately equal to the true value of μ? Why or why not?**
 
 ANSWER: Yes, the sample avergae is approximately equal to the true mean even when the null is rejected. This is because all the data was ultimately created from the same distribution with the same mean. The range of values of the estimate of mu hat is much larger when the null is rejected, but the mean value will still be the same. 
