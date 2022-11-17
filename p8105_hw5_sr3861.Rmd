@@ -238,6 +238,8 @@ t_test_stats %>%
   ylab("Test Power")
 ```
 
+There isn't a clear trend, but it seems that overall, power increases with increasing effect size.
+
 **Plot the average estimate of μ-hat vs. the true value of μ. Make a second plot of the average estimate of μ-hat only in samples for which the null was rejected vs. the true value of μ.**
 ```{r plot mu hat}
 plot_mu_hat = 
