@@ -42,8 +42,8 @@ The code chunk below imports the data in individual spreadsheets contained in `.
 ```{r}
 full_df = 
   tibble(
-    files = list.files("data/zip_data/"),
-    path = str_c("data/zip_data/", files)
+    files = list.files("Data/zip_data.zip/"),
+    path = str_c("Data/zip_data.zip/", files)
   ) %>% 
   mutate(data = map(path, read_csv)) %>% 
   unnest()
@@ -126,17 +126,31 @@ tibble(
   mutate(
     stats = map(.x = mu, ~rerun(100, sim_mean_pval(n = 30, mu = .x, sigma = 5)))
   ) %>%
-  unnest(stats) %>%
-  unnest(mu_hat, p.value)
+unnest(stats) %>%
+unnest(stats)
 
 ```
 
-#Plot proportion of times null was rejected vs. mu
+*Plot proportion of times null was rejected vs. mu*
 ```{r plot power}
 t_test_stats %>%
+  mutate(
+  reject = (p.value < 0.05)) %>%
   group_by(mu) %>%
-  summarize(
-  power = nrow(stats$p.value <= 0.05)/nrow(stats$p.value)) %>%
-  ggplot(aes(x = power, y = mu))
+    summarize(
+    power = sum(reject)/length(p.value)) %>%
+  ggplot(aes(x = mu, y = power)) + geom_line() +
+  xlab("True Mean")+
+  ylab("Test Power")
+```
+
+*Plot the average estimate of μ^ on the y axis and the true value of μ on the x axis. Make a second plot (or overlay on the first) the average estimate of μ^ only in samples for which the null was rejected on the y axis and the true value of μ on the x axis.*
+```{r plot mu hat}
+t_test_stats %>%
+  group_by(mu) %>%
+  summarize(avg_mu_hat = mean(mu_hat))%>%
+  ggplot(aes(x = mu, y = avg_mu_hat)) + geom_line() +
+  xlab("True Mean")+
+  ylab("Average Estimate of Mu Hat")
 ```
 
