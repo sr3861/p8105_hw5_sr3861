@@ -130,23 +130,34 @@ balt_prop_test %>%
 
 #create a function to perform prop.test()
 
-fxn_prop_test = function(city){
+fxn_prop_test = function(data){
 
 city_summary = 
-  homicides %>%
-    filter(city_state == city) %>%
+  data %>%
   mutate(solved = case_when(
            disposition == "Closed without arrest" ~ "no",
            disposition == "Open/No arrest" ~ "no",
            disposition == "Closed by arrest" ~ "yes")) %>%
-  summarize(
-    unsolved = sum(solved == "no"),
-    total = n()) 
+    summarize(
+      unsolved = sum(solved == "no"),
+      total = n())
     
-prop_test = prop.test(city_summary$unsolved, city_summary$total)  
+prop_test = prop.test(city_summary$unsolved, city_summary$total) %>%
+  broom::tidy()%>%
+  select(estimate, conf.low, conf.high)
 
 return(prop_test)
 }
+
+#Apply function to full dataset
+all_proportions =
+  homicides %>%
+  nest(data = -city_state)%>%
+  mutate(
+    test_results = map(data, fxn_prop_test))%>%
+  select(city_state, test_results) %>%
+  unnest(test_results) %>%
+  knitr::kable()
 ```
 
 ### Problem 3: Power in a 1-sample t-test
