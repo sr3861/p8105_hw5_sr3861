@@ -129,7 +129,6 @@ balt_prop_test %>%
 ```{r prop test function}
 
 #create a function to perform prop.test()
-
 fxn_prop_test = function(data){
 
 city_summary = 
@@ -156,9 +155,24 @@ all_proportions =
   mutate(
     test_results = map(data, fxn_prop_test))%>%
   select(city_state, test_results) %>%
-  unnest(test_results) %>%
-  knitr::kable()
+  unnest(test_results)
+
+all_proportions %>% knitr::kable()
 ```
+**Plot of proportions & CIs**
+
+```{r plot all cities}
+all_proportions %>%
+  mutate(city_state = fct_reorder(city_state, estimate)) %>%
+  ggplot(aes(x = city_state, y = estimate)) +
+  geom_point() +
+  geom_errorbar(aes(ymin = conf.low, ymax = conf.high))+
+  labs(title = "Proportion of Homicides that Are Unsolved, by City", 
+       x = "City",
+       y = "Estimated Proportion with 95% Confidence Interval") +
+  theme(axis.text.x = element_text(angle = 75, vjust = .5, hjust = 1))
+```
+
 
 ### Problem 3: Power in a 1-sample t-test
 
